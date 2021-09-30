@@ -1,0 +1,141 @@
+---
+title: "Student Success Report"
+author: "Institutional Research Office"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+options(knitr.kable.NA = '', knitr.table.format = 'pandoc')
+
+library(tidyverse)
+library(knitr)
+
+source("code/peers.R")
+source("code/get_data.R")
+source("code/tables.R")
+source("code/transform.R")
+
+# Set the program length to use for graduation rates
+program_length <- 4 # must be 2 or 4
+
+# use characteristics to filter institutions to create a peer set
+my_peers <- get_peer_group("peer sets/USNews.R") %>% 
+  left_join(get_dashboard()) 
+
+# get university name from IPEDS UNITID
+my_name <- my_peers$INSTNM[my_peers$UNITID == my_UNITID]
+  
+# get a long dataframe with grad rates of all sorts
+grad_rates <- get_grad_rates(program_length) %>% 
+  inner_join(my_peers %>% select(UNITID))
+
+# get retention rates
+ret_rates <- get_retention() %>% 
+   inner_join(my_peers %>% select(UNITID))
+```
+![](images/banner.jpg) 
+
+# Introduction
+
+This report compares outcome statistics for `r my_name` to selected peers using data from the Integrated Postsecondary Education Data System (IPEDS) and the College Scorecard. The latter is summarized by institution in an accreditor dashboard available on the website of the National Advisory Committee on Institutional Quality and Integrity (NACIQI). There is a lag in obtaining these data sources due to the time necessary to collect, vet, and publish the information. Typically, the sources are about two years out of date. Throughout this report, the year refers to the year of a fall term, so that 2019 means the 2019-2020 academic year. 
+
+The list of peer institutions is found in the appendix.
+
+# Dashboard Outcomes
+
+The NACIQI's accreditation dashboard summarizes institutional characteristics and outcome measures. Here these are compared to `r my_name` using summary statistics from peers. 
+
+```{r}
+# descriptive outcome statistics
+my_peers %>% 
+  mean_outcomes_table() %>% 
+  map_df(format_numbers) %>% 
+  kable()
+```
+
+# Retention rates
+
+First-year retention rates for first-time, full-time students is a standard outcome measure. A history of such rates for is shown in the figure below, including rates for part-time students. 
+
+```{r}
+ret_rates %>% 
+  mutate(Institution = ifelse(UNITID == my_UNITID, "Us","Peers")) %>% 
+  group_by(Year, Institution) %>% 
+  summarize(FT = sum(FT_retained, na.rm = TRUE)/sum(FT_cohort, na.rm = TRUE),
+            PT = sum(PT_retained, na.rm = TRUE)/sum(PT_cohort, na.rm = TRUE)) %>% 
+  gather(Type, Rate, PT, FT) %>% 
+  ggplot(aes(x = Year, y = Rate, color = Institution, linetype = Type)) +
+  geom_line() +
+  theme_bw() +
+  ylab("First year retention rates")
+```
+
+# Graduation rates
+
+The distribution of peer graduation rates and transfer rates is shown below, with the red line indicating `r my_name`. 
+
+```{r fig.width=4, fig.height=3}
+ref_lines <- grad_rates %>% 
+   filter(UNITID == my_UNITID,
+          DemoCategory == "Total",
+          GradType != "Still enrolled",
+          GradType != "Non-completers") 
+
+grad_rates %>% 
+  filter(UNITID != my_UNITID,
+          DemoCategory == "Total",
+          GradType != "Still enrolled",
+          GradType != "Non-completers") %>% 
+  ggplot(aes(x = TypeFraction)) +
+  geom_histogram(color = "white", fill = "steelblue", bins = 15) +
+  facet_grid(. ~ GradType) +
+  geom_vline(data = ref_lines, aes(xintercept = TypeFraction), color = "red") +
+  theme_bw() +
+  scale_x_continuous(labels = scales::percent) +
+  xlab("Student success rates")
+  
+```
+
+Graduation rates are disaggregated by gender and racial identification, and reported in three ways. A 100% rate means four years for a four-year degree, and 150% means a six year rate for a four-year degree. A third category adds transfer-outs to the 150% rate. The numbers of graduates (N) in each category are given for our institution. Small Ns will be associated with greater variance in the graduation rates.
+
+```{r}
+grad_outcomes_table(grad_rates, my_UNITID) %>% 
+  kable(digits = 2)
+
+```
+
+Graduation rates are generally predicted by first-year retention rates, and it can be useful to compare the two by student demographics. The graph below illustrates this by comparing the average institutional retention rate to gender-specific graduations rates for `r my_name` (circled) in comparison to peers. Linear trend lines are added.
+
+```{r}
+grad_rates %>% 
+  left_join(ret_rates %>% group_by(UNITID) %>% summarize(Retained = mean(FT_retention, na.rm = TRUE)/100)) %>% 
+  mutate(Institution = ifelse(UNITID == my_UNITID,"O","")) %>% 
+  filter( GradType %in% c(Retained, "100% completers") ,
+          DemoCategory %in% c("Men","Women")) %>% 
+  select(UNITID, Institution, DemoCategory, Retained, GradRate = TypeFraction) %>% 
+  ggplot(aes(x = Retained, y = GradRate,
+             color  = DemoCategory, label = Institution)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "lm") +
+  geom_text() +
+  theme_bw() +
+  scale_x_continuous(labels = scales::percent) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_colour_hue(l = 45)
+  
+```
+
+
+# Appendix A. Peer Institutions
+
+This report uses the list of peer institutions given below.
+
+```{r peers}
+my_peers %>% 
+  filter(Peer) %>% 
+  select(Name = INSTNM, `Basic Carnegie Class` = `(CCBASIC) Carnegie Classification 2005/2010: Basic`) %>% 
+  arrange(Name) %>% 
+  kable()
+```

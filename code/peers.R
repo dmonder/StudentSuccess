@@ -1,0 +1,111 @@
+get_peer_group <- function(fname){
+  source(fname) # load the peer description
+  
+  ##################################################
+  # assemble the data to filter on
+  ##################################################
+  
+  hd2018 <- read_csv("data/hd2020.csv") %>% 
+    select(UNITID, OPEID, INSTNM, SECTOR, C18SZSET, CCBASIC,ICLEVEL,INSTSIZE,STABBR) %>% 
+    mutate(OPEID = as.integer(substr(OPEID,1,6))) # convert to 6-digit OPE for comparison
+  
+  # accreditor dashboard, indexed by OPEID
+  accreditors <- read_csv("data/Institutional-Performance-by-Accreditor_2021-07-12.csv", guess_max = 1e5) %>% 
+    select(ACCRED = Abbreviation, Accreditor = `Accreditor name`, OPEID = `Six-digit OPEID`) 
+    
+  hd2018 <- hd2018 %>% 
+    left_join(accreditors) %>% # connect the data by OPEID
+    distinct()    # no duplicates, just to be sure
+
+  ##################################################
+  # filter UNITID on the critera 
+  ##################################################
+  
+  # start with all institutions as default peer group, about 6800 institutions
+  peers <- hd2018
+  
+  # filter on the peer list
+  if(!is.null(my_SECTOR)){
+    peers <- peers %>% 
+      filter(SECTOR %in% my_SECTOR)
+  }
+  
+  # filter on the accreditor
+  if(!is.null(my_accreditor)){
+    peers <- peers %>% 
+      filter(ACCRED %in% my_accreditor)
+  }
+  
+  # filter on the carnegie size and residential status
+  if(!is.null(my_C18SZSET)){
+    peers <- peers %>% 
+      filter(C18SZSET %in% my_C18SZSET)
+  }
+  
+  # filter on the Carnegie basic classification
+  if(!is.null(my_CCBASIC)){
+    peers <- peers %>% 
+      filter(CCBASIC %in% my_CCBASIC)
+  }
+  
+  # filter on the level
+  if(!is.null(my_ICLEVEL)){
+    peers <- peers %>% 
+      filter(ICLEVEL %in% my_ICLEVEL)
+  }
+  
+  # filter on the size
+  if(!is.null(my_INSTSIZE)){
+    peers <- peers %>% 
+      filter(INSTSIZE %in% my_INSTSIZE)
+  }
+  
+  # filter on the state
+  if(!is.null(my_STABBR)){
+    peers <- peers %>% 
+      filter(STABBR %in% my_STABBR)
+  }
+  
+  # include schools on the peer list provided, regardless of other filters
+  if(!is.null(my_peers)){
+    peers_list <-  hd2018 %>% 
+      filter(UNITID %in% my_peers)
+    
+    # add these to the existing list
+    peers <- rbind(peers, peers_list) %>% 
+      distinct()  # leave out duplicates
+  }
+  
+  # ensure that the target institution is included 
+  if (!(my_UNITID %in% peers$UNITID)) {
+    peers <- rbind(hd2018 %>% filter(UNITID == my_UNITID), peers)
+  }
+  
+  #################################################
+  # Convert IPEDS codes to meaningful descriptions
+  #################################################
+  hd2018_vars <- read_csv("data/hd2020_vars.csv") %>% # code table from the data dictionary
+    select(varname, varTitle)
+  
+  hd2018_values <- read_csv("data/hd2020_values.csv") %>% # code table from the data dictionary
+      select(varname, codevalue, valuelabel) 
+  
+  pretty_vars <- peers %>% 
+    select(UNITID, SECTOR, C18SZSET, CCBASIC, ICLEVEL, INSTSIZE, STABBR) %>% # numeric codes
+    gather(varname, codevalue, -UNITID) %>% # make a long version
+    mutate(codevalue = as.character(codevalue)) %>% 
+    left_join(hd2018_values) %>% 
+    left_join(hd2018_vars) %>% 
+    mutate(var = paste0("(",varname,") ",varTitle),
+           val = paste0("(",codevalue,") ",valuelabel)) %>% 
+    select(UNITID, var, val) %>% 
+    spread(var,val)
+  
+  # return the pretty version
+  peers %>% 
+    select(UNITID, OPEID, INSTNM, Accreditor) %>% 
+    left_join(pretty_vars) %>% 
+    mutate(Peer = (UNITID != my_UNITID)) %>% # add a flag to indicate the target institution
+    return()
+
+}
