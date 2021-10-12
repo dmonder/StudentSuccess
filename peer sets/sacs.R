@@ -20,6 +20,9 @@ my_UNITID <- 218070 # required
 # dashboard
 my_peers <- NULL # e.g. my_peers <- c(123457,232567) 
 
+    # if you ONLY want the list in my_peers, set this to TRUE
+    my_peers_only <- FALSE
+
 # sector
 my_SECTOR <- 1:3
 
