@@ -19,6 +19,9 @@
     # you can find IPEDS IDs in the hd2018 file or the accreditor
     # dashboard
     my_peers <- NULL # e.g. my_peers <- c(123457,232567) 
+
+    # if you ONLY want the list in my_peers, set this to TRUE
+    my_peers_only <- FALSE
     
     # sector
     my_SECTOR <- 2
