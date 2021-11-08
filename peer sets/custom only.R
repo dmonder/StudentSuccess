@@ -20,16 +20,17 @@
     # dashboard
     my_peers <- 
     c( 100733,
-    100751,
-    100760,
-    100812,
-    100830,
-    100858,
-    100937,
-    101028,
-    101073,
-    101116,
-    101143)
+       100751,
+       100760,
+       100812,
+       100830,
+       100858,
+       100937,
+       101028,
+       101073,
+       101116,
+       101143
+    )
     
       # e.g. my_peers <- c(123457,232567) 
     
@@ -37,7 +38,7 @@
     my_peers_only <- TRUE
     
     # sector
-    my_SECTOR <- 2
+    #my_SECTOR <- 2
     
     #  0	Administrative Unit
     #  1	Public, 4-year or above
@@ -53,12 +54,12 @@
     
     
     # level of institution
-    my_ICLEVEL <- NULL
+    #my_ICLEVEL <- NULL
     # 1	Four or more years
     # 2	At least 2 but less than 4 years
     # 3	Less than 2 years (below associate)
     
-    my_INSTSIZE <- c(1,2,3)
+    #my_INSTSIZE <- c(1,2,3)
     #  1	Under 1,000
     #  2	1,000 - 4,999
     #  3	5,000 - 9,999
@@ -66,10 +67,10 @@
     #  5	20,000 and above
     
     # region to include in comparison
-    my_STABBR <- NULL #  state abbreviations, e.g. c("SC","NC","GA","TN") 
+    #my_STABBR <- NULL #  state abbreviations, e.g. c("SC","NC","GA","TN") 
     
     # Carnegie size and residential type
-    my_C18SZSET <- c(10,13)
+    #my_C18SZSET <- c(10,13)
     # 1	Two-year, very small
     # 2	Two-year, small
     # 3	Two-year, medium
@@ -89,7 +90,7 @@
     # 17	Four-year, large, highly residential
     # 18	Exclusively graduate/professional
     
-    my_CCBASIC <- 18:23
+    #my_CCBASIC <- 18:23
     # 1	Associate's--Public Rural-serving Small
     # 2	Associate's--Public Rural-serving Medium
     # 3	Associate's--Public Rural-serving Large
@@ -124,7 +125,7 @@
     # 32	Other special-focus institutions
     # 33	Tribal Colleges
 
-    my_accreditor <- "SACSCC"
+    #my_accreditor <- "SACSCC"
     
     # AARTS
     # Association of Advanced Rabbinical and Talmudic Schools

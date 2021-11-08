@@ -21,7 +21,7 @@ source("code/transform.R")
 program_length <- 4 # must be 2 or 4
 
 # use characteristics to filter institutions to create a peer set
-my_peers <- get_peer_group("peer sets/USNews.R") %>% 
+my_peers <- get_peer_group("peer sets/custom only.R") %>% 
   left_join(get_dashboard()) 
 
 # get university name from IPEDS UNITID
